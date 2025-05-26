@@ -496,4 +496,167 @@ class ChatContextManager:
             logger.error(f"清理商品信息时出错: {e}")
             conn.rollback()
         finally:
+            conn.close()
+    
+    def get_all_user_chats(self, user_id, limit=1000):
+        """
+        获取用户的所有聊天记录
+        
+        Args:
+            user_id: 用户ID
+            limit: 返回的最大记录数
+            
+        Returns:
+            list: 包含所有聊天记录的列表，按时间排序
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute(
+                """
+                SELECT m.role, m.content, m.timestamp, m.item_id, i.description as item_desc
+                FROM messages m
+                LEFT JOIN items i ON m.item_id = i.item_id
+                WHERE m.user_id = ?
+                ORDER BY m.timestamp DESC
+                LIMIT ?
+                """, 
+                (user_id, limit)
+            )
+            
+            chats = []
+            for role, content, timestamp, item_id, item_desc in cursor.fetchall():
+                chats.append({
+                    "role": role,
+                    "content": content,
+                    "timestamp": timestamp,
+                    "item_id": item_id,
+                    "item_description": item_desc
+                })
+            
+            return chats
+        except Exception as e:
+            logger.error(f"获取用户所有聊天记录时出错: {e}")
+            return []
+        finally:
+            conn.close()
+            
+    def get_user_items_with_stats(self, user_id):
+        """
+        获取用户所有交互过的商品及其统计信息
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            list: 包含商品信息和统计信息的列表
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute(
+                """
+                SELECT 
+                    i.item_id,
+                    i.data,
+                    i.price,
+                    i.description,
+                    i.last_updated,
+                    COUNT(m.id) as message_count,
+                    MAX(m.timestamp) as last_interaction,
+                    (SELECT count FROM bargain_counts 
+                     WHERE user_id = ? AND item_id = i.item_id) as bargain_count
+                FROM items i
+                LEFT JOIN messages m ON i.item_id = m.item_id AND m.user_id = ?
+                GROUP BY i.item_id
+                ORDER BY last_interaction DESC
+                """,
+                (user_id, user_id)
+            )
+            
+            items = []
+            for row in cursor.fetchall():
+                item_data = json.loads(row[1]) if row[1] else {}
+                items.append({
+                    "item_id": row[0],
+                    "data": item_data,
+                    "price": row[2],
+                    "description": row[3],
+                    "last_updated": row[4],
+                    "message_count": row[5],
+                    "last_interaction": row[6],
+                    "bargain_count": row[7] or 0
+                })
+            
+            return items
+        except Exception as e:
+            logger.error(f"获取用户商品统计信息时出错: {e}")
+            return []
+        finally:
+            conn.close()
+            
+    def get_user_chat_summary(self, user_id):
+        """
+        获取用户的聊天统计摘要
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            dict: 包含统计信息的字典
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            # 获取基本统计信息
+            cursor.execute(
+                """
+                SELECT 
+                    COUNT(*) as total_messages,
+                    COUNT(DISTINCT item_id) as total_items,
+                    MIN(timestamp) as first_message,
+                    MAX(timestamp) as last_message,
+                    COUNT(DISTINCT CASE WHEN role = 'user' THEN timestamp END) as user_messages,
+                    COUNT(DISTINCT CASE WHEN role = 'assistant' THEN timestamp END) as assistant_messages
+                FROM messages 
+                WHERE user_id = ?
+                """,
+                (user_id,)
+            )
+            
+            stats = cursor.fetchone()
+            
+            # 获取议价统计
+            cursor.execute(
+                """
+                SELECT 
+                    COUNT(*) as total_bargains,
+                    SUM(count) as total_bargain_attempts,
+                    MAX(count) as max_bargain_count
+                FROM bargain_counts 
+                WHERE user_id = ?
+                """,
+                (user_id,)
+            )
+            
+            bargain_stats = cursor.fetchone()
+            
+            return {
+                "total_messages": stats[0],
+                "total_items": stats[1],
+                "first_message": stats[2],
+                "last_message": stats[3],
+                "user_messages": stats[4],
+                "assistant_messages": stats[5],
+                "total_bargains": bargain_stats[0],
+                "total_bargain_attempts": bargain_stats[1],
+                "max_bargain_count": bargain_stats[2]
+            }
+        except Exception as e:
+            logger.error(f"获取用户聊天统计摘要时出错: {e}")
+            return {}
+        finally:
             conn.close() 

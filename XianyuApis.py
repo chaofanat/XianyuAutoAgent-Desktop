@@ -182,3 +182,64 @@ class XianyuApis:
                 time.sleep(0.5)
                 return self.get_item_info(item_id, retry_count + 1)
         return res_json
+
+    def get_item_id_list(self, user_id, page=1, page_size=20, retry_count=0):
+        """获取当前用户发布的商品id列表，支持分页"""
+        if retry_count >= 3:
+            logger.error("获取商品id列表失败，重试次数过多")
+            return {"error": "获取商品id列表失败，重试次数过多"}
+
+        params = {
+            'jsv': '2.7.2',
+            'appKey': '34839810',
+            't': str(int(time.time()) * 1000),
+            'sign': '',
+            'v': '1.0',
+            'type': 'originaljson',
+            'accountSite': 'xianyu',
+            'dataType': 'json',
+            'timeout': '20000',
+            'api': 'mtop.idle.web.xyh.item.list',
+            'sessionOption': 'AutoLoginOnly',
+            'spm_cnt': 'a21ybx.personal.0.0',
+        }
+
+        data_val = json.dumps({
+            "needGroupInfo": True,
+            "pageNumber": page,
+            "userId": user_id,
+            "pageSize": page_size
+        }, ensure_ascii=False)
+        data = {
+            'data': data_val,
+        }
+        token = self.session.cookies.get('_m_h5_tk', '').split('_')[0]
+        sign = generate_sign(params['t'], token, data_val)
+        params['sign'] = sign
+        response = self.session.post(
+            'https://h5api.m.goofish.com/h5/mtop.idle.web.xyh.item.list/1.0/',
+            params=params,
+            data=data
+        )
+        res_json = response.json()
+        if isinstance(res_json, dict):
+            ret_value = res_json.get('ret', [])
+            if not any('SUCCESS::调用成功' in ret for ret in ret_value):
+                logger.warning(f"API调用失败，错误信息: {ret_value}")
+                if 'Set-Cookie' in response.headers:
+                    logger.info("检测到Set-Cookie，等待cookie更新")
+                    self.clear_duplicate_cookies()
+                time.sleep(0.5)
+                return self.get_item_id_list(user_id, page, page_size, retry_count + 1)
+        # 修正：从data.cardList[*].cardData.id提取商品id
+        item_id_list = []
+        try:
+            card_list = res_json.get('data', {}).get('cardList', [])
+            for card in card_list:
+                card_data = card.get('cardData', {})
+                item_id = card_data.get('id')
+                if item_id:
+                    item_id_list.append(str(item_id))
+        except Exception as e:
+            logger.warning(f"解析商品id列表失败: {e}")
+        return item_id_list

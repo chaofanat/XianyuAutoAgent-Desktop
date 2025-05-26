@@ -7,6 +7,7 @@ import websockets
 from loguru import logger
 from dotenv import load_dotenv
 from XianyuApis import XianyuApis
+from tqdm import tqdm
 
 
 from utils.xianyu_utils import generate_mid, generate_uuid, trans_cookies, generate_device_id, decrypt
@@ -15,7 +16,7 @@ from context_manager import ChatContextManager
 
 
 class XianyuLive:
-    def __init__(self, cookies_str):
+    def __init__(self, cookies_str, bot):
         self.xianyu = XianyuApis()
         self.base_url = 'wss://wss-goofish.dingtalk.com/'
         self.cookies_str = cookies_str
@@ -24,6 +25,7 @@ class XianyuLive:
         self.myid = self.cookies['unb']
         self.device_id = generate_device_id(self.myid)
         self.context_manager = ChatContextManager()
+        self.bot = bot
         
         # 心跳相关配置
         self.heartbeat_interval = 15  # 心跳间隔15秒
@@ -275,14 +277,14 @@ class XianyuLive:
             context = self.context_manager.get_context(send_user_id, item_id)
             
             # 生成回复
-            bot_reply = bot.generate_reply(
+            bot_reply = self.bot.generate_reply(
                 send_message,
                 item_description,
                 context=context
             )
             
             # 检查是否为价格意图，如果是则增加议价次数
-            if bot.last_intent == "price":
+            if self.bot.last_intent == "price":
                 self.context_manager.increment_bargain_count(send_user_id, item_id)
                 bargain_count = self.context_manager.get_bargain_count(send_user_id, item_id)
                 logger.info(f"用户 {send_user_name} 对商品 {item_id} 的议价次数: {bargain_count}")
@@ -437,6 +439,26 @@ if __name__ == '__main__':
     load_dotenv()
     cookies_str = os.getenv("COOKIES_STR")
     bot = XianyuReplyBot()
-    xianyuLive = XianyuLive(cookies_str)
+    xianyuLive = XianyuLive(cookies_str, bot)
+    # --------- 新增：批量拉取商品信息并存库 ---------
+    user_id = xianyuLive.myid  # 当前登录用户id
+    page = 1
+    page_size = 20
+    total_count = 0
+    while True:
+        item_ids = xianyuLive.xianyu.get_item_id_list(user_id=user_id, page=page, page_size=page_size)
+        if not item_ids:
+            break
+        logger.info(f"正在拉取第{page}页商品（共{len(item_ids)}个）...")
+        for item_id in tqdm(item_ids, desc=f"第{page}页商品拉取", ncols=80):
+            info = xianyuLive.xianyu.get_item_info(item_id)
+            if 'data' in info and 'itemDO' in info['data']:
+                xianyuLive.context_manager.save_item_info(item_id, info['data']['itemDO'])
+            total_count += 1
+            time.sleep(0.2)  # 每次请求间隔200ms，防止被限流
+        if len(item_ids) < page_size:
+            break
+        page += 1
+    logger.info(f"所有商品信息已批量拉取并存入数据库，共{total_count}个商品")
     # 常驻进程
     asyncio.run(xianyuLive.main())
