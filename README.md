@@ -75,6 +75,8 @@ MODEL_NAME=模型名称
 
 注意：默认使用的模型是通义千问，如需使用其他API，请自行修改.env文件中的模型地址和模型名称；
 COOKIES_STR自行在闲鱼网页端获取cookies(网页端F12打开控制台，选择Network，点击Fetch/XHR,点击一个请求，查看cookies)
+或者通过运行setup_assistant.py进行更详细的环境变量指引
+python setup_assistant.py
 
 4. 创建提示词文件prompts/*_prompt.txt（也可以直接将模板名称中的_example去掉）
 默认提供四个模板，可自行修改
@@ -98,7 +100,7 @@ python main.py
 
 ## 🤝 参与贡献
 
-欢迎通过 Issue 提交建议或 PR 贡献代码，请遵循 [贡献指南](https://contributing.md/)
+欢迎通过 Issue 提交建议或 PR 贡献代码。
 
 
 
