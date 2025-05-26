@@ -1,4 +1,4 @@
-# 🚀 Xianyu AutoAgent - 智能闲鱼客服机器人系统
+# 🚀 Xianyu AutoAgent-Desktop - 智能闲鱼客服机器人系统-桌面强化版
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/) [![Python Version](https://img.shields.io/badge/nodejs-18%2B-blue)](https://nodejs.org/zh-cn/) [![LLM Powered](https://img.shields.io/badge/LLM-powered-FF6F61)](https://platform.openai.com/)
 
@@ -20,6 +20,7 @@
 | 议价系统 | ✅ 阶梯降价策略                | 🔄 市场比价功能               |
 | 技术支持 | ✅ 网络搜索整合                | 🔄 RAG知识库增强              |
 | 运维监控 | ✅ 基础日志                    | 🔄 钉钉集成<br>🔄  Web管理界面 |
+| 桌面应用 | 🔄 一键启停服务<br>🔄 会话管理界面<br>🔄 数据统计面板<br>🔄 配置可视化 | 待定 |
 
 ## 🎨效果图
 <div align="center">
@@ -115,48 +116,60 @@ https://github.com/cv-cat/XianYuApis
 
 感谢<a href="https://github.com/cv-cat">@CVcat</a>的技术支持
 
-## 📱 交流群
-欢迎加入项目交流群，交流技术、分享经验、互助学习。
-<div align="center">
-  <table>
-    <tr>
-      <td align="center"><strong>交流群2（已满200）</strong></td>
-      <td align="center"><strong>交流群3（推荐加入）</strong></td>
-    </tr>
-    <tr>
-      <td><img src="./images/wx_group2.jpg" width="300px" alt="交流群1"></td>
-      <td><img src="./images/wx_group3.png" width="300px" alt="交流群2"></td>
-    </tr>
-  </table>
-</div>
+本项目分支于[Xianyu AutoAgent](https://github.com/shaxiu/XianyuAutoAgent).
 
-## 💼 寻找机会
 
-### <a href="https://github.com/shaxiu">@Shaxiu</a>
-**🔍寻求方向**：**AI产品经理实习**  
-**🛠️项目贡献：**：需求分析、agent方案设计与实现  
-**📫 联系：** **email**:coderxiu@qq.com；**wx:** coderxiu
 
-### <a href="https://github.com/cv-cat">@CVcat</a>
-**🔍寻求方向**：**研发工程师实习**（python、java、逆向、爬虫）  
-**🛠️项目贡献：**：闲鱼逆向工程  
-**📫 联系：** **email:** 992822653@qq.com；**wx:** CVZC15751076989
-## ☕ 请喝咖啡
-您的☕和⭐将助力项目持续更新：
 
-<div align="center">
-  <img src="./images/wechat_pay.jpg" width="400px" alt="微信赞赏码"> 
-  <img src="./images/alipay.jpg" width="400px" alt="支付宝收款码">
-</div>
 
 
 ## 📈 Star 趋势
-<a href="https://www.star-history.com/#shaxiu/XianyuAutoAgent&Date">
+<a href="https://www.star-history.com/#chaofanat/XianyuAutoAgent-Desktop&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=shaxiu/XianyuAutoAgent&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=shaxiu/XianyuAutoAgent&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=shaxiu/XianyuAutoAgent&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=chaofanat/XianyuAutoAgent-Desktop&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=chaofanat/XianyuAutoAgent-Desktop&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=chaofanat/XianyuAutoAgent-Desktop&type=Date" />
  </picture>
 </a>
+
+## 🖥️ 桌面应用设计（规划中）
+
+### 核心功能
+- **服务控制**
+  - 一键启动/停止智能体服务
+  - 服务状态实时监控
+  - 系统资源占用展示
+
+- **会话管理**
+  - 实时会话列表展示
+  - 手动接入/转接会话
+  - 会话历史记录查看
+  - 会话状态标记（待处理/处理中/已完成）
+
+- **配置中心**
+  - 模型参数配置
+  - 专家系统配置
+  - 价格策略设置
+  - 系统参数调整
+
+### 界面布局
+```
++------------------------+
+|     顶部工具栏         |
++------------------------+
+|        |              |
+| 会话   |   主内容区    |
+| 列表   |              |
+|        |              |
++--------+--------------+
+|     底部状态栏        |
++------------------------+
+```
+
+### 技术实现
+- 使用 Electron + React 构建跨平台桌面应用
+- 采用 IPC 通信实现主进程与渲染进程交互
+- WebSocket 实现实时会话数据同步
+- SQLite 本地存储会话历史
 
 
